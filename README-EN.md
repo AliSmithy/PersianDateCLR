@@ -20,22 +20,57 @@ PersianDateCLR is a collection of SQL CLR functions written in C# to facilitate 
 
 ## Installation and Setup
 
-### 1. Compile the DLL
+### 1. Compile DLL File
 
-Run the `compile.bat` script or use the following command in the Windows Command Prompt to compile the C# source code into a DLL. The output `PersianDateCLR.dll` will be placed in the `bin/` directory.
+To compile the C# source code into a DLL file, either use the `compile.bat` script or run the following command in the Windows Command Prompt. The output file `PersianDateCLR.dll` will be located in the `bin/` folder.
 
 ```bat
 mkdir bin
 "C:\Windows\Microsoft.NET\Framework\v3.5\csc.exe" /target:library /out:./bin/PersianDateCLR.dll persianDateCLR.cs
 ```
 
-> **Note:** Update the path to `csc.exe` if it differs in your Windows installation.
+> Note: If the path to `csc.exe` is different in your Windows installation, please update it accordingly.
 
-### 2. Set Up SQL Server Functions
+### 2. Configure SQL Server for CLR Execution
 
-Run the `setup.sql` script in your SQL Server environment. This script will:
-- Enable CLR integration.
-- Register the compiled functions (`GregorianToPersian`, `PersianToGregorian`, `PersianYear`, `PersianMonth`, and `PersianDay`) as SQL Server functions.
+Run the following code on your target database:
+
+```sql
+sp_configure 'show advanced options', 1;
+GO
+sp_configure 'clr enabled', 1;
+GO
+sp_configure 'clr strict security', 0;
+GO
+RECONFIGURE;
+GO
+```
+
+The above code enables CLR functionality.
+
+### 3. Install Assembly in SQL Server
+
+Open SQL Server Management Studio and select your desired database. Then, navigate to the `Programmability` branch, right-click on `Assemblies`, and choose `New Assembly`. In the dialog, select the previously compiled `PersianDateCLR.dll` file and confirm.
+
+### 4. Configure Functions in SQL Server
+
+Execute the following script on your target database:
+
+```sql
+CREATE FUNCTION [dbo].[GregorianToPersian](@GregorianDate datetime, @Separator nvarchar(max))
+RETURNS nvarchar(max) WITH EXECUTE AS CALLER AS EXTERNAL NAME [PersianDateCLR].[PersianDateCLR].[GregorianToPersian]
+GO
+CREATE FUNCTION [dbo].[PersianToGregorian](@date nvarchar(max))
+RETURNS datetime WITH EXECUTE AS CALLER AS EXTERNAL NAME [PersianDateCLR].[PersianDateCLR].[PersianToGregorian]
+GO
+CREATE FUNCTION [dbo].[PersianYear](@GregorianDate datetime)
+RETURNS int WITH EXECUTE AS CALLER AS EXTERNAL NAME [PersianDateCLR].[PersianDateCLR].[PersianYear]
+GO
+CREATE FUNCTION [dbo].[PersianMonth](@GregorianDate datetime)
+RETURNS int WITH EXECUTE AS CALLER AS EXTERNAL NAME [PersianDateCLR].[PersianDateCLR].[PersianMonth]
+GO
+CREATE FUNCTION [dbo].[PersianDay](@GregorianiDate datetime)
+```
 
 ## Usage
 

@@ -33,11 +33,41 @@ mkdir bin
 
 > **توجه:** در صورت متفاوت بودن مسیر `csc.exe` در نصب ویندوز شما، آن را به‌روزرسانی کنید.
 
-### 2. تنظیم توابع در SQL Server
+### 2. تنظیمات SQL Server برای اجرای CLR
+کد زیر را برای دیتابیس مورد نظرتان اجرا کنید:
+```sql
+sp_configure 'show advanced options', 1;
+GO
+sp_configure 'clr enabled', 1;
+GO
+sp_configure 'clr strict security', 0;
+GO
+RECONFIGURE;
+GO
+```
+کد بالا قابلیت CLR را فعال می‌کند
 
-اسکریپت `setup.sql` را در محیط SQL Server اجرا کنید. این اسکریپت:
-- قابلیت CLR را فعال می‌کند.
-- توابع کامپایل‌شده (`GregorianToPersian`، `PersianToGregorian`، `PersianYear`، `PersianMonth`، و `PersianDay`) را به‌عنوان توابع SQL Server ثبت می‌کند.
+### 3. نصب اسمبلی در SQL Server
+برنامه SQL Server Management Studio را باز کنید و دیتابیس مورد نظرتان را انتخاب کنید. سپس  Programmability را باز کنید و روی Assemblies راست کلیک کنید و گزینه New Assembly را انتخاب کنید. در آنجا فایل PersianDateCLR.dll که پیشتر کامپایل کرده بودید را انتخاب و تایید کنید.
+
+### 4. تنظیم توابع در SQL Server
+اسکریپت زیر را در دیتابیس مورد نظرتان اجرا کنید:
+```sql
+CREATE FUNCTION [dbo].[GregorianToPersian](@GregorianDate datetime, @Separator nvarchar(max))
+RETURNS nvarchar(max) WITH EXECUTE AS CALLER AS EXTERNAL NAME [PersianDateCLR].[PersianDateCLR].[GregorianToPersian]
+GO
+CREATE FUNCTION [dbo].[PersianToGregorian](@date nvarchar(max))
+RETURNS datetime WITH EXECUTE AS CALLER AS EXTERNAL NAME [PersianDateCLR].[PersianDateCLR].[PersianToGregorian]
+GO
+CREATE FUNCTION [dbo].[PersianYear](@GregorianDate datetime)
+RETURNS int WITH EXECUTE AS CALLER AS EXTERNAL NAME [PersianDateCLR].[PersianDateCLR].[PersianYear]
+GO
+CREATE FUNCTION [dbo].[PersianMonth](@GregorianDate datetime)
+RETURNS int WITH EXECUTE AS CALLER AS EXTERNAL NAME [PersianDateCLR].[PersianDateCLR].[PersianMonth]
+GO
+CREATE FUNCTION [dbo].[PersianDay](@GregorianiDate datetime)
+RETURNS int WITH EXECUTE AS CALLER AS EXTERNAL NAME [PersianDateCLR].[PersianDateCLR].[PersianDay]
+```
 
 ## استفاده
 
